@@ -9,19 +9,23 @@
 
 import sys
 import os
-import urllib2
+import urllib.request
+import urllib
+import urllib.parse
+import urllib.error
 import socket
 import time
 import gzip
-import StringIO
+# import StringIO
+from io import StringIO
 import re
 import random
 import types
 from dotenv import load_dotenv, find_dotenv
 from bs4 import BeautifulSoup
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
 
 # Load config from .env file
 # TODO: Error handling
@@ -30,7 +34,7 @@ try:
     base_url = os.environ.get('BASE_URL')
     results_per_page = int(os.environ.get('RESULTS_PER_PAGE'))
 except:
-    print "ERROR: Make sure you have .env file with proper config"
+    print("ERROR: Make sure you have .env file with proper config")
     sys.exit(1)
 
 user_agents = list()
@@ -74,7 +78,7 @@ class SearchResult:
             file.write('url:' + self.url + '\n')
             file.write('title:' + self.title + '\n')
             file.write('content:' + self.content + '\n\n')
-        except IOError, e:
+        except IOError as e:
             print ('file error:', e)
         finally:
             file.close()
@@ -139,7 +143,7 @@ class GoogleAPI:
                         continue
                         
                     url = self.extractUrl(url)
-                    if(cmp(url, '') == 0):
+                    if(url == ''):
                         continue
                     title = link.renderContents()
                     title = re.sub(r'<.+?>', '', title)
@@ -163,20 +167,20 @@ class GoogleAPI:
         @param num -> number of search results to return
         """
         search_results = list()
-        query = urllib2.quote(query)
+        query = urllib.parse.quote(query)
         if(num % results_per_page == 0):
             pages = num / results_per_page
         else:
             pages = num / results_per_page + 1
 
-        for p in range(0, pages):
+        for p in range(0, int(pages)):
             start = p * results_per_page
             url = '%s/search?hl=%s&num=%d&start=%s&q=%s' % (
                 base_url, lang, results_per_page, start, query)
             retry = 3
             while(retry > 0):
                 try:
-                    request = urllib2.Request(url)
+                    request = urllib.request.Request(url)
                     length = len(user_agents)
                     index = random.randint(0, length-1)
                     user_agent = user_agents[index]
@@ -184,7 +188,7 @@ class GoogleAPI:
                     request.add_header('connection', 'keep-alive')
                     request.add_header('Accept-Encoding', 'gzip')
                     request.add_header('referer', base_url)
-                    response = urllib2.urlopen(request)
+                    response = urllib.request.urlopen(request)
                     html = response.read()
                     if(response.headers.get('content-encoding', None) == 'gzip'):
                         html = gzip.GzipFile(
@@ -193,13 +197,13 @@ class GoogleAPI:
                     results = self.extractSearchResults(html)
                     search_results.extend(results)
                     break
-                except urllib2.URLError, e:
+                except urllib.error.URLError as e:
                     print ('url error:', e)
-                    self.randomSleep()
+                    # self.randomSleep()
                     retry = retry - 1
                     continue
 
-                except Exception, e:
+                except Exception as e:
                     print ('error:', e)
                     retry = retry - 1
                     self.randomSleep()
@@ -229,7 +233,7 @@ def crawler():
     # if no parameters, read query keywords from file
     if(len(sys.argv) < 2):
         keywords = open('./keywords', 'r')
-        keyword = keywords.readline()
+        keyword = keywords.readline().strip()
         while(keyword):
             results = api.search(keyword, num=expect_num)
             for r in results:
