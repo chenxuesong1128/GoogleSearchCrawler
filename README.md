@@ -38,3 +38,8 @@ How to Use?
 If there are any problems or bugs about this tool, please open an issue.
 
 
+Modified on April 16. 2020
+--------------------------
+1. python3 version
+2. the crawler will be detected after hundreds of requests,
+    I think it's a hard problems, maybe you can try IP proxy.
